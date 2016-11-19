@@ -34,7 +34,29 @@ app.get('/search/:name', function(req, res) {
         
         relatedArtists.on('end', function(item) {
             artist.related = item.artists;
-            res.json(artist);
+            
+            var relatedLength = artist.related.length;
+            var completed = 0;
+            
+            artist.related.forEach(function(artist) {
+                
+                var topTracks = getFromApi('artists/'+artist.id+'/top-tracks', {'country': 'US'});
+                
+                topTracks.on('end', function(item) {
+                    artist.tracks = item.tracks;
+                    completed++;
+                    checkComplete();
+                });
+                
+                topTracks.on('error', function(code) {
+                   console.log(code); 
+                });
+            });
+            function checkComplete() {
+                if(relatedLength === completed) {
+                    res.json(artist);
+                }
+            }
         });
         
         relatedArtists.on('error', function(code) {
